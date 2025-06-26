@@ -3,6 +3,7 @@ using Domain.Interfaces;
 using Openpay;
 using Openpay.Entities;
 using Openpay.Entities.Request;
+using System;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Services
@@ -21,8 +22,12 @@ namespace Infrastructure.Services
             if (payment.Amount <= 0)
                 throw new ArgumentException("El monto debe ser mayor a cero.");
 
+            if (string.IsNullOrWhiteSpace(payment.SourceId))
+                throw new ArgumentException("SourceId (token de tarjeta) es requerido.");
+
             try
             {
+                // Crear cliente
                 var customer = new Customer
                 {
                     Name = payment.Name,
@@ -33,64 +38,31 @@ namespace Infrastructure.Services
 
                 customer = _openpay.CustomerService.Create(customer);
 
-                if (!string.IsNullOrWhiteSpace(payment.SourceId))
+                // Crear el cargo con token
+                var chargeRequest = new ChargeRequest
                 {
-                    var chargeRequest = new ChargeRequest
-                    {
-                        Method = "card",
-                        SourceId = payment.SourceId,
-                        Amount = payment.Amount,
-                        Description = payment.Description ?? "Pago desde app",
-                        Currency = payment.Currency ?? "MXN", // Ajustado a MXN
-                        Customer = customer,
-                        DeviceSessionId = payment.DeviceSessionId
-                    };
+                    Method = "card",
+                    SourceId = payment.SourceId,
+                    Amount = (decimal)payment.Amount,
+                    Description = payment.Description ?? "Pago desde app",
+                    Currency = payment.Currency ?? "MXN",
+                    Customer = customer,
+                    DeviceSessionId = payment.DeviceSessionId,
+                    UseCardPoints = "false"
+                };
 
-                    var charge = _openpay.ChargeService.Create(chargeRequest);
-                    return charge.Id;
-                }
-                else
-                {
-                    var card = new Card
-                    {
-                        CardNumber = payment.CardNumber,
-                        HolderName = payment.HolderName,
-                        Cvv2 = payment.Cvv2,
-                        ExpirationMonth = payment.ExpirationMonth,
-                        ExpirationYear = payment.ExpirationYear,
-                        DeviceSessionId = payment.DeviceSessionId
-                    };
+                var charge = _openpay.ChargeService.Create(chargeRequest);
 
-                    var createdCard = _openpay.CardService.Create(customer.Id, card);
-
-                    var chargeRequest = new ChargeRequest
-                    {
-                        Method = "card",
-                        SourceId = createdCard.Id,
-                        Amount = payment.Amount,
-                        Description = payment.Description ?? "Pago desde app",
-                        Currency = payment.Currency ?? "MXN",
-                        Customer = customer,
-                        DeviceSessionId = payment.DeviceSessionId
-                    };
-
-                    var charge = _openpay.ChargeService.Create(chargeRequest);
-                    return charge.Id;
-                }
+                return charge.Id;
             }
             catch (OpenpayException ex)
             {
-                // Maneja errores específicos de Openpay, puedes loguear o transformar el error
                 throw new ApplicationException($"Error Openpay: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                // Otros errores generales
                 throw new ApplicationException($"Error inesperado: {ex.Message}", ex);
             }
         }
-
-
-
     }
 }

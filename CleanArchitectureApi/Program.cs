@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 // Configurar la cadena de conexión
 var connectionString = builder.Configuration.GetConnectionString("Connection");
 
@@ -13,7 +12,7 @@ var connectionString = builder.Configuration.GetConnectionString("Connection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// 🔹 Registrar IProductService con su implementación ProductService
+// Registrar IPaymentService con su implementación PaymentService
 builder.Services.AddScoped<IPaymentService>(provider =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
@@ -29,6 +28,16 @@ builder.Services.AddScoped<IPaymentService>(provider =>
     return new PaymentService(merchantId, apiKey);
 });
 
+// Añadir política CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -45,6 +54,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Usar CORS antes de la autorización
+app.UseCors("AllowAll");
+
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();
