@@ -1,6 +1,6 @@
-# openpay_demo
+# openpay_backedn
 
-A new NetCore Project
+A new NetCore Project with OpenPay Backend
 
 ## Getting Started
 
