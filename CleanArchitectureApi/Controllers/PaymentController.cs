@@ -1,9 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using OpenPayApi.Dto;
-using System;
-using System.Threading.Tasks;
 
 namespace OpenPayApi.Controllers
 {

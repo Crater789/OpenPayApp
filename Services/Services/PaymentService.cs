@@ -3,8 +3,6 @@ using Domain.Interfaces;
 using Openpay;
 using Openpay.Entities;
 using Openpay.Entities.Request;
-using System;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Services
 {
