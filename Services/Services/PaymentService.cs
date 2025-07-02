@@ -40,33 +40,37 @@ namespace Infrastructure.Services
 
             try
             {
-                // Crear cliente
-                var customer = new Customer
+                // Ejecutar la lógica de pago en un hilo en segundo plano para evitar el bloqueo
+                return await Task.Run(() =>
                 {
-                    Name = payment.Name,
-                    LastName = payment.LastName,
-                    PhoneNumber = payment.PhoneNumber,
-                    Email = payment.Email
-                };
+                    // Crear cliente
+                    var customer = new Customer
+                    {
+                        Name = payment.Name,
+                        LastName = payment.LastName,
+                        PhoneNumber = payment.PhoneNumber,
+                        Email = payment.Email
+                    };
 
-                customer = _openpay.CustomerService.Create(customer);
+                    customer = _openpay.CustomerService.Create(customer);
 
-                // Crear el cargo con token
-                var chargeRequest = new ChargeRequest
-                {
-                    Method = "card",
-                    SourceId = payment.SourceId,
-                    Amount = (decimal)payment.Amount,
-                    Description = payment.Description ?? "Pago desde app",
-                    Currency = payment.Currency ?? "MXN",
-                    Customer = customer,
-                    DeviceSessionId = payment.DeviceSessionId,
-                    UseCardPoints = "false"
-                };
+                    // Crear el cargo con token
+                    var chargeRequest = new ChargeRequest
+                    {
+                        Method = "card",
+                        SourceId = payment.SourceId,
+                        Amount = (decimal)payment.Amount,
+                        Description = payment.Description ?? "Pago desde app",
+                        Currency = payment.Currency ?? "MXN",
+                        Customer = customer,
+                        DeviceSessionId = payment.DeviceSessionId,
+                        UseCardPoints = "false"
+                    };
 
-                var charge = _openpay.ChargeService.Create(chargeRequest);
+                    var charge = _openpay.ChargeService.Create(chargeRequest);
 
-                return charge.Id;
+                    return charge.Id;
+                });
             }
             catch (OpenpayException ex)
             {
