@@ -2,21 +2,21 @@
 {
     public class PaymentDto
     {
-        public string SourceId { get; set; }  // opcional
+        public required string SourceId { get; set; }  // opcional
         public string Description { get; set; } = "Pago desde app";
 
-        public string Name { get; set; }
-        public string LastName { get; set; }
-        public string PhoneNumber { get; set; }
-        public string Email { get; set; }
+        public required string Name { get; set; }
+        public required string LastName { get; set; }
+        public required string PhoneNumber { get; set; }
+        public required string Email { get; set; }
         public decimal Amount { get; set; }
 
-        public string CardNumber { get; set; }
-        public string HolderName { get; set; }
-        public string Cvv2 { get; set; }
-        public string ExpirationMonth { get; set; }
-        public string ExpirationYear { get; set; }
-        public string DeviceSessionId { get; set; }
+        public required string CardNumber { get; set; }
+        public required string HolderName { get; set; }
+        public required string Cvv2 { get; set; }
+        public required string ExpirationMonth { get; set; }
+        public required string ExpirationYear { get; set; }
+        public required string DeviceSessionId { get; set; }
     }
 
 
