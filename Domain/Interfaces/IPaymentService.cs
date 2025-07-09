@@ -5,6 +5,6 @@ namespace Domain.Interfaces
 {
     public interface IPaymentService
     {
-        Task<string> CreateCardPaymentAsync(CardPaymentData payment);
+        Task<string> CreateCardPaymentAsync(CardPaymentData payment, string idToken);
     }
 }

@@ -31,12 +31,38 @@ namespace OpenPayApi.Controllers
         }
 
         [HttpPost("pagar")]
-        public async Task<IActionResult> CreatePayment([FromBody] CardPaymentData payment)
+        public async Task<IActionResult> CreatePayment([FromBody] CardPaymentData request)
         {
+            if (request == null)
+                return BadRequest("Datos de pago inv�lidos.");
+
+            if (request == null || string.IsNullOrWhiteSpace(request.IdToken))
+                return Unauthorized("Token de Google es requerido.");
+
             try
             {
-                var chargeId = await _paymentService.CreateCardPaymentAsync(payment);
+                var paymentData = new CardPaymentData
+                {
+                    SourceId = request.SourceId,
+                    Amount = request.Amount,
+                    Name = request.Name,
+                    LastName = request.LastName,
+                    PhoneNumber = request.PhoneNumber,
+                    Email = request.Email,
+                    Description = request.Description,
+                    Currency = request.Currency,
+                    DeviceSessionId = request.DeviceSessionId,
+                    IdToken = request.IdToken 
+
+                };
+
+                var chargeId = await _paymentService.CreateCardPaymentAsync(paymentData, request.IdToken);
+
                 return Ok(new { chargeId });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -47,6 +73,5 @@ namespace OpenPayApi.Controllers
                 });
             }
         }
-
     }
 }

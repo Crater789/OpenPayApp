@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />
     <PackageReference Include="Openpay" Version="1.0.27" />
   </ItemGroup>
 

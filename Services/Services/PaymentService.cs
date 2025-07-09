@@ -12,9 +12,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
 using Domain.Entities;
 using Domain.Interfaces;
+using Google.Apis.Auth;  
 using Openpay;
 using Openpay.Entities;
 using Openpay.Entities.Request;
@@ -24,14 +24,44 @@ namespace Infrastructure.Services
     public class PaymentService : IPaymentService
     {
         private readonly OpenpayAPI _openpay;
+        private readonly string _googleClientId;
 
-        public PaymentService(string merchantId, string apiKey)
+        public PaymentService(string merchantId, string apiKey, string googleClientId)
         {
             _openpay = new OpenpayAPI(apiKey, merchantId, country: "MX", production: false);
+            _googleClientId = googleClientId;
         }
 
-        public async Task<string> CreateCardPaymentAsync(CardPaymentData payment)
+        // Método para validar el token Google
+        public async Task<GoogleJsonWebSignature.Payload?> ValidateGoogleTokenAsync(string idToken)
         {
+            try
+            {
+                var settings = new GoogleJsonWebSignature.ValidationSettings()
+                {
+                    Audience = new List<string> { _googleClientId }
+                };
+
+                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+                return payload;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<string> CreateCardPaymentAsync(CardPaymentData payment, string idToken)
+        {
+            // Validamos token Google antes de proceder
+            var payload = await ValidateGoogleTokenAsync(idToken);
+            if (payload == null)
+                throw new UnauthorizedAccessException("Token de Google inválido o expirado.");
+
+            // Opcional: verificar que el email del token coincida con el del pago
+            if (!string.Equals(payload.Email, payment.Email, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("El email del token no coincide con el email del pago.");
+
             if (payment.Amount <= 0)
                 throw new ArgumentException("El monto debe ser mayor a cero.");
 
@@ -40,10 +70,8 @@ namespace Infrastructure.Services
 
             try
             {
-                // Ejecutar la lógica de pago en un hilo en segundo plano para evitar el bloqueo
                 return await Task.Run(() =>
                 {
-                    // Crear cliente
                     var customer = new Customer
                     {
                         Name = payment.Name,
@@ -52,9 +80,8 @@ namespace Infrastructure.Services
                         Email = payment.Email
                     };
 
-                    customer = _openpay.CustomerService.Create(customer);
+                    var createdCustomer = _openpay.CustomerService.Create(customer);
 
-                    // Crear el cargo con token
                     var chargeRequest = new ChargeRequest
                     {
                         Method = "card",
@@ -62,7 +89,7 @@ namespace Infrastructure.Services
                         Amount = (decimal)payment.Amount,
                         Description = payment.Description ?? "Pago desde app",
                         Currency = payment.Currency ?? "MXN",
-                        Customer = customer,
+                        Customer = createdCustomer,
                         DeviceSessionId = payment.DeviceSessionId,
                         UseCardPoints = "false"
                     };

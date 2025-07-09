@@ -18,6 +18,7 @@ builder.Services.AddScoped<IPaymentService>(provider =>
     var config = provider.GetRequiredService<IConfiguration>();
     var merchantId = config["OpenPay:MerchantId"];
     var apiKey = config["OpenPay:ApiKey"];
+    var googleClientId = config["Google:ClientId"];
 
     if (string.IsNullOrWhiteSpace(merchantId))
         throw new InvalidOperationException("OpenPay MerchantId is not configured.");
@@ -25,8 +26,12 @@ builder.Services.AddScoped<IPaymentService>(provider =>
     if (string.IsNullOrWhiteSpace(apiKey))
         throw new InvalidOperationException("OpenPay ApiKey is not configured.");
 
-    return new PaymentService(merchantId, apiKey);
+    if (string.IsNullOrWhiteSpace(googleClientId))
+        throw new InvalidOperationException("Google ClientId is not configured."); 
+
+    return new PaymentService(merchantId, apiKey, googleClientId);
 });
+
 
 // Añadir política CORS
 builder.Services.AddCors(options =>

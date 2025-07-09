@@ -12,6 +12,7 @@
     public required string Description { get; set; }
     public string Currency { get; set; } = "MXN";
     public required string DeviceSessionId { get; set; } // opcional, para antifraude
-}
+    public required string IdToken { get; set; }
+    }
 
 }
